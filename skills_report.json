@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-06-25T08:29:57",
+  "total": 2,
+  "skills": [
+    {
+      "name": "TRAE-product-knowledge",
+      "description": "TRAE 品牌与官方产品知识问答",
+      "scope": "TRAE 品牌、产品差异、IDE / Work / CLI / Plugin、MCP、Skills、官方文档",
+      "use_when": "用户询问 TRAE 是什么、产品对比、官方链接等"
+    },
+    {
+      "name": "web-dev",
+      "description": "从零创建生产级 Web 页面 / 应用",
+      "scope": "新建网站、Web 应用、Web 游戏，PRD + 技术文档 + 实现",
+      "use_when": "用户明确要求从零搭建 Web 项目时"
+    }
+  ]
+}
