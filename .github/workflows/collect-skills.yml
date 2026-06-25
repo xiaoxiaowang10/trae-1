@@ -1,0 +1,37 @@
+name: Collect Skills
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  collect-skills:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run collect_skills.py
+        run: |
+          python collect_skills.py --output skills_report.md
+          python collect_skills.py --output skills_report.json
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add skills_report.md skills_report.json
+          git diff --staged --quiet || git commit -m "chore: auto-update skills report"
+          git push

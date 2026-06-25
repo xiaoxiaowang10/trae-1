@@ -1,9 +1,10 @@
 """
 收集当前环境中可用的 Skill 列表
 用法：
-    python collect_skills.py            # 列出全部 skills
-    python collect_skills.py --recent   # 记录一次"最近使用"到本地
-    python collect_skills.py --history  # 查看历史使用记录
+    python collect_skills.py                       # 列出全部 skills
+    python collect_skills.py --recent SKILL_NAME   # 记录一次"最近使用"到本地
+    python collect_skills.py --history             # 查看历史使用记录
+    python collect_skills.py --output FILE         # 导出 skill 列表到文件 (json/md)
 """
 
 import argparse
@@ -85,6 +86,44 @@ def list_skills() -> None:
         print(f"  触发 : {s['use_when']}\n")
 
 
+def export_skills(output_path: str) -> None:
+    """导出 skill 列表到文件，根据扩展名自动选择 json 或 md 格式"""
+    path = Path(output_path)
+    suffix = path.suffix.lower()
+    if suffix == ".json":
+        content = json.dumps(
+            {
+                "generated_at": datetime.now().isoformat(timespec="seconds"),
+                "total": len(AVAILABLE_SKILLS),
+                "skills": AVAILABLE_SKILLS,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    elif suffix in (".md", ".markdown"):
+        lines = [
+            "# Skill 清单",
+            "",
+            f"> 生成时间：{datetime.now().isoformat(timespec='seconds')}",
+            "",
+            f"当前可用 skill 共 **{len(AVAILABLE_SKILLS)}** 个：",
+            "",
+        ]
+        for s in AVAILABLE_SKILLS:
+            lines.append(f"## {s['name']}")
+            lines.append("")
+            lines.append(f"- **描述**：{s['description']}")
+            lines.append(f"- **范围**：{s['scope']}")
+            lines.append(f"- **触发条件**：{s['use_when']}")
+            lines.append("")
+        content = "\n".join(lines)
+    else:
+        print(f"[error] 不支持的输出格式: {suffix}，请使用 .json 或 .md")
+        return
+    path.write_text(content, encoding="utf-8")
+    print(f"[ok] 已导出 skill 列表到 {path}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="收集当前可用的 Skill 列表")
     parser.add_argument(
@@ -97,6 +136,11 @@ def main() -> None:
         action="store_true",
         help="查看最近 skill 使用记录",
     )
+    parser.add_argument(
+        "--output",
+        metavar="FILE",
+        help="导出 skill 列表到文件（支持 .json 和 .md 格式）",
+    )
     args = parser.parse_args()
 
     if args.recent:
@@ -104,6 +148,9 @@ def main() -> None:
         return
     if args.history:
         show_recent()
+        return
+    if args.output:
+        export_skills(args.output)
         return
     list_skills()
 
