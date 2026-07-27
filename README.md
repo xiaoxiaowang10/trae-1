@@ -64,3 +64,83 @@ python collect_skills.py --output skills_report.md
 - 在仓库 Actions 页面手动触发
 
 运行时会生成 `skills_report.md` 和 `skills_report.json` 两个报告文件。
+
+## 部署到 Vercel（定时邮件推送）
+
+使用 Vercel Cron Jobs 实现每日自动发送技术资讯邮件。
+
+### 部署步骤
+
+#### 1. 准备工作
+
+- 注册 [Vercel](https://vercel.com) 账号
+- 安装 Vercel CLI：`npm i -g vercel`
+
+#### 2. 配置环境变量
+
+在 Vercel 项目的 **Settings → Environment Variables** 中添加以下变量：
+
+| 变量名 | 说明 | 示例 |
+|--------|------|------|
+| `SMTP_HOST` | SMTP 服务器地址 | `smtp.126.com` |
+| `SMTP_PORT` | SMTP SSL 端口 | `465` |
+| `SMTP_USER` | 发件人邮箱 | `your@email.com` |
+| `SMTP_PASS` | 邮箱授权码（不是登录密码） | `xxxxxxxx` |
+| `FROM_ADDR` | 发件人地址（可选，默认同 SMTP_USER） | `your@email.com` |
+| `TO_ADDR` | 收件人邮箱 | `to@email.com` |
+| `CRON_SECRET` | 可选，API 访问密钥 | `随机字符串` |
+
+#### 3. 部署
+
+```bash
+# 登录 Vercel
+vercel login
+
+# 首次部署（按提示选择项目）
+vercel
+
+# 部署到生产环境
+vercel --prod
+```
+
+#### 4. 手动测试
+
+部署成功后，访问：
+
+```
+https://your-project.vercel.app/api/send-digest
+```
+
+如果配置了 `CRON_SECRET`，需要在请求头中携带：
+
+```bash
+curl -H "Authorization: Bearer YOUR_CRON_SECRET" https://your-project.vercel.app/api/send-digest
+```
+
+### 定时任务配置
+
+默认每天 **早上 8:00** 自动发送邮件，配置在 [vercel.json](vercel.json) 的 `crons` 字段：
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/send-digest",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}
+```
+
+使用标准 5 位 cron 表达式（UTC 时间），如需修改发送时间，调整 `schedule` 即可。
+
+> ⚠️ 注意：Vercel Cron Jobs 仅在 **Pro** 及以上套餐可用。Hobby 套餐需要手动触发或使用第三方定时服务。
+
+### 文件说明
+
+| 文件 | 说明 |
+|------|------|
+| `vercel.json` | Vercel 部署配置，含 Cron 定时任务 |
+| `api/send-digest.py` | Serverless Function 入口 |
+| `send_daily.py` | 核心逻辑（抓取 + 发送） |
+| `requirements.txt` | Python 依赖清单 |
