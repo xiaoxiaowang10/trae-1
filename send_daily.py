@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """快速抓取 AI/技术资讯并发送邮件"""
 
+import os
 import smtplib
 import sys
 from datetime import datetime, timezone
@@ -12,12 +13,12 @@ import requests
 from bs4 import BeautifulSoup
 
 # ============ 配置 ============
-SMTP_HOST = "smtp.126.com"
-SMTP_PORT = 465
-SMTP_USER = "wzb12345654321@126.com"
-SMTP_PASS = "JEewEs2eq9gLZMbj"
-FROM_ADDR = "wzb12345654321@126.com"
-TO_ADDR = "wzb12345654321@126.com"
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.126.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASS = os.getenv("SMTP_PASS", "")
+FROM_ADDR = os.getenv("FROM_ADDR", SMTP_USER)
+TO_ADDR = os.getenv("TO_ADDR", "")
 
 HEADERS = {"User-Agent": "unified-daily/0.1"}
 
@@ -132,23 +133,31 @@ def send_email(html_body):
     print("✅ 邮件发送成功")
 
 
-def main():
-    print("正在抓取数据...")
+def run_digest():
     items = []
     items.extend(fetch_github(6))
     items.extend(fetch_devto(6))
     items.extend(fetch_rss(4))
     items.extend(fetch_tech_blogs(3))
-    print(f"共抓取 {len(items)} 条")
 
     if not items:
-        print("无数据可发送")
-        return 1
+        return {"success": False, "message": "无数据可发送", "count": 0}
 
     html = render_html(items)
-    print("正在发送邮件...")
     send_email(html)
-    return 0
+    return {"success": True, "message": "发送成功", "count": len(items)}
+
+
+def main():
+    print("正在抓取数据...")
+    result = run_digest()
+    if result["success"]:
+        print(f"共抓取 {result['count']} 条")
+        print("✅ 邮件发送成功")
+        return 0
+    else:
+        print(result["message"])
+        return 1
 
 
 if __name__ == "__main__":
